@@ -250,16 +250,6 @@
   :type 'string
   :group 'aweshell)
 
-(defcustom aweshell-valid-command-color "#98C379"
-  "The color of valid command by `aweshell-validate-command'."
-  :type 'string
-  :group 'aweshell)
-
-(defcustom aweshell-invalid-command-color "#FF0000"
-  "The color of invalid command by `aweshell-validate-command'."
-  :type 'string
-  :group 'aweshell)
-
 (defface aweshell-alert-buffer-face
   '((t (:foreground "#ff2d55" :bold t)))
   "Alert buffer face."
@@ -617,43 +607,6 @@ This advice can make `other-window' skip `aweshell' dedicated window."
 (with-eval-after-load "esh-opt"
   (setq eshell-highlight-prompt nil
         eshell-prompt-function 'epe-theme-pipeline))
-
-;; Validate command before post to eshell.
-(defun aweshell-validate-command ()
-  (save-excursion
-    (let (end (line-end-position))
-      (forward-line 0)
-      (re-search-forward (format "%s\\([^ \t\r\n\v\f]*\\)" eshell-prompt-regexp)
-                         end
-                         t))
-    (let ((beg (match-beginning 1))
-          (end (match-end 1))
-          (command (match-string 1)))
-      (when command
-        (put-text-property
-         beg end
-         'face `(:foreground
-                 ,(if
-                      (or
-                       ;; Command exists?
-                       (executable-find command)
-                       ;; Or command is an alias?
-                       (seq-contains (eshell-alias-completions "") command)
-                       ;; Or it is ../. ?
-                       (or (equal command "..")
-                           (equal command ".")
-                           (equal command "exit"))
-                       ;; Or it is a file in current dir?
-                       (member (file-name-base command) (directory-files default-directory))
-                       ;; Or it is a elisp function
-                       (functionp (intern command)))
-                      aweshell-valid-command-color
-                    aweshell-invalid-command-color)))
-        (put-text-property beg end 'rear-nonsticky t)))))
-
-(add-hook 'eshell-mode-hook
-          (lambda ()
-            (add-hook 'post-command-hook #'aweshell-validate-command t t)))
 
 (defun aweshell-emacs (&rest args)
   "Open a file in Emacs with ARGS, Some habits die hard."
